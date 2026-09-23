@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Motion Capture Limitations Analysis</title>
+    <style>
+        :root {
+            --bg-color: #fafafa;
+            --surface: #ffffff;
+            --text-main: #111111;
+            --text-body: #333333;
+            --text-muted: #666666;
+            --border-color: #e5e5e5;
+            --border-strong: #cfcfcf;
+            --accent-red: #d32f2f;
+            --box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+            box-sizing: border-box;
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) {
+                --bg-color: #151515;
+                --surface: #1f1f1f;
+                --text-main: #f2f2f2;
+                --text-body: #d2d2d2;
+                --text-muted: #9b9b9b;
+                --border-color: #333333;
+                --border-strong: #4a4a4a;
+                --accent-red: #f0625f;
+                --box-shadow: none;
+            }
+        }
+
+        :root[data-theme="dark"] {
+            --bg-color: #151515;
+            --surface: #1f1f1f;
+            --text-main: #f2f2f2;
+            --text-body: #d2d2d2;
+            --text-muted: #9b9b9b;
+            --border-color: #333333;
+            --border-strong: #4a4a4a;
+            --accent-red: #f0625f;
+            --box-shadow: none;
+        }
+
+        *, *::before, *::after {
+            box-sizing: inherit;
+        }
+
+        html {
+            background-color: var(--bg-color);
+            scroll-padding-top: env(safe-area-inset-top, 0px);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            max-width: 720px;
+            margin: 60px auto;
+            padding: 0 20px;
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            margin-bottom: 5px;
+        }
+
+        .metadata {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-top: 35px;
+            margin-bottom: 10px;
+            color: var(--text-main);
+        }
+
+        p, li {
+            font-size: 1rem;
+            color: var(--text-body);
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        .summary {
+            font-size: 1.05rem;
+            color: var(--text-main);
+            border-left: 3px solid var(--text-main);
+            padding-left: 16px;
+            margin: 0;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 12px 0 16px;
+        }
+
+        table {
+            width: 100%;
+            min-width: 480px;
+            border-collapse: collapse;
+            font-size: 0.92rem;
+        }
+
+        th, td {
+            text-align: left;
+            vertical-align: top;
+            padding: 8px 14px 8px 0;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-body);
+        }
+
+        th {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            border-bottom-color: var(--border-strong);
+        }
+
+        td:first-child {
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .note {
+            font-size: 0.92rem;
+            color: var(--text-muted);
+        }
+
+        .upgrade-box {
+            background-color: var(--surface);
+            border-left: 4px solid var(--accent-red);
+            padding: 20px;
+            margin: 30px 0;
+            box-shadow: var(--box-shadow);
+        }
+
+        .upgrade-box h2 {
+            margin-top: 0;
+            color: var(--accent-red);
+        }
+
+        .upgrade-box p:last-child {
+            margin-bottom: 0;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                margin: 32px auto;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .upgrade-box {
+                padding: 16px;
+            }
+        }
+
+        @media print {
+            :root,
+            :root:not([data-theme="light"]),
+            :root[data-theme="dark"] {
+                --bg-color: #ffffff;
+                --surface: #ffffff;
+                --text-main: #111111;
+                --text-body: #333333;
+                --text-muted: #666666;
+                --border-color: #e5e5e5;
+                --border-strong: #cfcfcf;
+                --accent-red: #d32f2f;
+                --box-shadow: none;
+            }
+
+            body {
+                margin: 0 auto;
+            }
+
+            .upgrade-box,
+            table {
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Motion Capture Limitations Analysis</h1>
+    <div class="metadata">
+        Test task: Basket pick-and-place (four table marks) | Date: September 22, 2026<br>
+        Lead: Alex Mulholland | Collaborators: Charles M, Matan W
+    </div>
+
+    <p class="summary">We expect to deliver the must-have ground truth, head and waist position and orientation, on our current eight-camera OptiTrack system. Those rigid bodies are large, well spaced, and sit above the table, conditions this setup handles well. Our tests with instrumented blocks showed that small, closely spaced markers near the table can't be tracked reliably on the current hardware, which limits the nice-to-have hand landmarks. For now we're proceeding with lower camera angles, which keep marker identities stable but give up some coverage from above. Two more cameras and brighter retroreflective tape would close that gap.</p>
+
+    <h2>1. Objective</h2>
+    <p>Evaluate tracking for the basket pick-and-place task on our eight-camera OptiTrack Flex 3 system, using four cardboard blocks as the props, each instrumented with small wooden balls covered in retroreflective tape.</p>
+
+    <h2>2. Deliverables</h2>
+    <p>What the capture spec asks for, and our plan for each:</p>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Requirement</th>
+                    <th>Spec</th>
+                    <th>Plan</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Head position and orientation (6DoF)</td>
+                    <td>Must-have</td>
+                    <td>Tracked on the current eight cameras within the capture volume, using a large, well-spaced rigid body on a headband.</td>
+                </tr>
+                <tr>
+                    <td>Waist position and orientation (6DoF)</td>
+                    <td>Must-have</td>
+                    <td>Tracked on the current eight cameras within the capture volume, using a large, well-spaced rigid body on a waist belt.</td>
+                </tr>
+                <tr>
+                    <td>Sync gesture (hands flat, fingers spread, 3 s)</td>
+                    <td>Start of every segment</td>
+                    <td>Registered in the mocap by a rigid body on each wrist while the rig cameras record it.</td>
+                </tr>
+                <tr>
+                    <td>Hand joint positions and orientation (21-keypoint landmarks)</td>
+                    <td>Nice-to-have</td>
+                    <td>Stretch goal. Finger markers are small, close together, and often hidden, the same conditions that failed in our block tests.</td>
+                </tr>
+                <tr>
+                    <td>Body pose (COCO, MediaPipe Pose, or SMPL)</td>
+                    <td>Nice-to-have</td>
+                    <td>Not planned for this capture.</td>
+                </tr>
+                <tr>
+                    <td>Prop positions</td>
+                    <td>Not requested</td>
+                    <td>Not tracked.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <p>The limitations below come from our block tests and apply to small, closely spaced markers near the table. We don't expect them to affect the head and waist rigid bodies.</p>
+
+    <h2>3. Observed limitations</h2>
+    <ul>
+        <li><strong>Marker merging and bloom:</strong> Each Flex 3 captures at 640×480. When markers are close together, they land too few pixels apart to separate and merge into one blob, causing identity flips and tracking loss. Our current tape isn't bright enough, so we raise exposure to keep markers visible, which adds bloom and makes the merging worse.</li>
+        <li><strong>Identity flips:</strong> The blocks swapped identities when their markers merged or dropped out of view. Lower camera angles stop the swaps but lose the views from above (section 4), so on eight cameras we can have stable identities or overhead coverage, not both.</li>
+        <li><strong>Distance degradation:</strong> Markers far from the lenses cover too few pixels to resolve reliably, which shrinks the usable tracking volume. This persists even with official high-grade markers, not just our homemade ones.</li>
+        <li><strong>Angle coverage and occlusion:</strong> With eight cameras we can cover high angles or low angles well, but not both at once, so some markers are hidden at any given moment, whether the blocks are stationary or moving.</li>
+    </ul>
+
+    <h2>4. Attempted solutions</h2>
+    <ul>
+        <li>Switched from organic props (apples) to cardboard blocks with reflective wooden markers to stabilize the signal.</li>
+        <li>Tested high/mid and mid/low camera configurations with eight cameras. Lowering the angles fixed the identity swaps but dropped the views from above, and neither configuration gave full coverage.</li>
+        <li>Tested marker and settings changes: a unique, asymmetric layout on each block, wider spacing between markers, larger balls, and Motive threshold and LED tuning. Results were mixed: asymmetric layouts slightly reduced swaps but didn't stop them, and none of these changes reliably achieved full coverage.</li>
+    </ul>
+
+    <h2>5. Current approach</h2>
+    <p>Until the upgrade is in place, we're proceeding on the current eight cameras with the changes that worked in testing:</p>
+    <ul>
+        <li><strong>Lower camera angles:</strong> This fixed the identity swaps. The trade-off is less coverage from above, which mostly affects markers near the table. The head and waist rigid bodies sit well above it, so we expect them to stay covered.</li>
+        <li><strong>Asymmetric marker layouts:</strong> These reduced swaps slightly, so every rigid body gets a unique layout.</li>
+    </ul>
+    <p>For each segment, we'll:</p>
+    <ul>
+        <li>Record head and waist ground truth alongside the rigs.</li>
+        <li>Start with the 3-second sync gesture, visible to the rig cameras and registered in the mocap by the wrist rigid bodies.</li>
+        <li>Attempt hand landmarks as a stretch goal, with gaps expected until the upgrade.</li>
+    </ul>
+
+    <div class="upgrade-box">
+        <h2>6. Recommended upgrade</h2>
+        <p><strong>Purpose:</strong> Restore the views from above that the lower angles give up, and make small markers near the table reliable enough for hand landmarks. The must-have head and waist capture can go ahead without it.</p>
+        <p><strong>Upgrade:</strong> Two more Flex 3 cameras (10 total), and ORALITE V98 retroreflective tape in place of our current tape.</p>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Problem</th>
+                        <th>Fix</th>
+                        <th>How it helps</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Merging and bloom</td>
+                        <td>Brighter, conformable tape (ORALITE V98)</td>
+                        <td>Lets us lower exposure, shrinking blobs so they separate, while markers remain visible.</td>
+                    </tr>
+                    <tr>
+                        <td>Angle coverage and occlusion</td>
+                        <td>Two more cameras</td>
+                        <td>Covers high and low viewpoints at once. Extra views also separate markers that merge in any single view.</td>
+                    </tr>
+                    <tr>
+                        <td>Distance</td>
+                        <td>Closer camera placement, plus brighter tape</td>
+                        <td>Closer cameras put more pixels on each marker, and brighter tape keeps distant markers detectable. The added cameras let us move some closer without losing coverage elsewhere.</td>
+                    </tr>
+                    <tr>
+                        <td>Identity flips</td>
+                        <td>Two more cameras, plus brighter tape</td>
+                        <td>Keeps the low angles that fixed the swaps without losing the views from above. Less merging also means fewer swaps.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="note">Per-camera resolution stays at 640×480. The gain comes from closer placement and more viewing angles, not higher resolution.</p>
+        <p><strong>Validation:</strong> We'd test V98 on a few sample markers before switching over.</p>
+        <p><strong>Success criteria:</strong> The instrumented blocks tracked continuously through a full segment with full coverage and no identity swaps. We'd use that as the benchmark before relying on the upgraded setup for hand landmarks.</p>
+    </div>
+
+    <p>If anything here differs from what you need, let us know before recording starts.</p>
+
+</body>
+</html>
